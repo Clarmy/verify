@@ -29,7 +29,7 @@ def main():
     # 对实际数据的测试
     print('-----------实际数据测试-----------')
     vfh = VerifyHandler('EC')
-    vfh.load_arrays('2018122420','2018122508','t',700,'Heilongjiang')
+    vfh.load_arrays('2018122420','2018122508','u',300,'Heilongjiang')
     pprint(vfh.errors)
 
 if __name__ == '__main__':

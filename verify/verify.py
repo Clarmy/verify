@@ -13,7 +13,14 @@ class UnknownDatasetError(Exception):
         self.message = message
 
 
+
 class FetchError(Exception):
+    def __init__(self,message):
+        self.message = message
+
+
+
+class LevelError(Exception):
     def __init__(self,message):
         self.message = message
 
@@ -290,9 +297,23 @@ class VerifyHandler():
             print('Parameter area is incorrect')
             exit()
 
-        if variable == 't':
+        if variable in ['t','q','r']:
+            # tlev : [850., 700., 500.]
             tlev = list(fctobj.variables['tlev'][:])
-            lev_index = tlev.index(level)
+            try:
+                lev_index = tlev.index(level)
+            except ValueError:
+                raise LevelError('%s is not in tlevel range, '
+                                 'please choose level in [850, 700, 500]'%level)
+        elif variable in ['u','v','at']:
+            # ulev : [500., 400., 300., 250., 200., 150.]
+            ulev = list(fctobj.variables['ulev'][:])
+            try:
+                lev_index = ulev.index(level)
+            except ValueError:
+                raise LevelError('%s is not in ulevel range, '
+                             'please choose level in '
+                             '[500, 400, 300, 250, 200, 150]'%level)
 
         self._arrays = {'initial_time':init_time,
                         'forecast_time':forecast_time,
