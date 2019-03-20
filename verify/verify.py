@@ -4,6 +4,7 @@ import os
 import numpy as np
 import netCDF4 as nc
 import json as js
+import warnings
 # import ipdb
 
 
@@ -21,6 +22,18 @@ class FetchError(Exception):
 
 
 class LevelError(Exception):
+    def __init__(self,message):
+        self.message = message
+
+
+
+class VariableError(Exception):
+    def __init__(self,message):
+        self.message = message
+
+
+
+class ParameterError(Exception):
     def __init__(self,message):
         self.message = message
 
@@ -164,9 +177,11 @@ class AnalysError():
         检验标准数组（真值）
 
     """
+    # ipdb.set_trace()
     def __init__(self,array1,array2):
-        self._array1 = np.array(array1)
-        self._array2 = np.array(array2)
+        self._array1 = np.ma.array(array1)
+        self._array2 = np.ma.array(array2)
+
 
     @property
     def mean_error(self):
@@ -191,12 +206,6 @@ class AnalysError():
 
 
 
-class AreaError():
-    """区域误差"""
-    pass
-
-
-
 class DichotVar():
     """二分变量检验
 
@@ -218,7 +227,7 @@ class DichotVar():
     >>> p2 = [[0,0],[2,0],[2,0.5],[0,0.5]]
     >>> region = [[0,0],[3,0],[3,3],[0,3]]
 
-    >>> dv = DichotVar(p1,p2)
+    >>> dv = DichotVar(p1,p2,region)
 
     # 获取基本面积参数
     >>> dv.areas
@@ -331,10 +340,10 @@ class DichotVar():
 
 class VerifyHandler():
     """检验处理器"""
-    def __init__(self,dataset):
+    def __init__(self, dataset):
         self.dataset = dataset
 
-    def load_arrays(self,init_time,forecast_time,variable,level,area):
+    def load_arrays(self, init_time, forecast_time, variable, **kwargs):
         """加载数据
 
         输入参数
@@ -384,79 +393,115 @@ class VerifyHandler():
         lon = fctobj.variables['lon'][:]
         lat = fctobj.variables['lat'][:]
 
-        if type(area) in [tuple, list] and len(area) == 4:
-            left,right,lower,upper = area
-            def nearist_index(array,value):
-                dist = []
-                for i,a in enumerate(array):
-                    dist.append((abs(a-value),i))
-                nearist = min(dist)
-                return nearist[1]
-            ileft = nearist_index(lon,left)
-            iright = nearist_index(lon,right)
-            ilower = nearist_index(lat,lower)
-            iupper = nearist_index(lat,upper)
+        if 'area' in kwargs:
+            area = kwargs['area']
+            if type(area) in [tuple, list] and len(area) == 4:
+                left,right,lower,upper = area
+                def nearist_index(array,value):
+                    dist = []
+                    for i,a in enumerate(array):
+                        dist.append((abs(a-value),i))
+                    nearist = min(dist)
+                    return nearist[1]
+                ileft = nearist_index(lon,left)
+                iright = nearist_index(lon,right)
+                ilower = nearist_index(lat,lower)
+                iupper = nearist_index(lat,upper)
 
-            fct_array = fct_array[:,ilower:iupper,ileft:iright]
-            trv_array = trv_array[:,ilower:iupper,ileft:iright]
+                fct_array = fct_array[:,ilower:iupper,ileft:iright]
+                trv_array = trv_array[:,ilower:iupper,ileft:iright]
 
-        elif type(area) == str:
-            # 根据用户指定的区域名称获取该区域内的数据
-            from matplotlib.path import Path
+            elif type(area) == str:
+                # 根据用户指定的区域名称获取该区域内的数据
+                from matplotlib.path import Path
 
-            # 编制全区域坐标网及其列表
-            lons, lats = np.meshgrid(lon,lat)
-            coords = list(zip(lons.flatten(),lats.flatten()))
+                # 编制全区域坐标网及其列表
+                lons, lats = np.meshgrid(lon,lat)
+                coords = list(zip(lons.flatten(),lats.flatten()))
 
-            # 加载区域边界
-            with open('../config/regions/%s.geojson' % area) as f:
-                boundary = js.load(f)['geometry']['coordinates'][0][0]
+                # 加载区域边界
+                with open('../config/regions/%s.geojson' % area) as f:
+                    boundary = js.load(f)['geometry']['coordinates'][0][0]
 
-            # 边界路径对象
-            path = Path(boundary)
+                # 边界路径对象
+                path = Path(boundary)
 
-            # 识别边界内外
-            flatten_mask = path.contains_points(coords)
+                # 识别边界内外
+                flatten_mask = path.contains_points(coords)
 
-            # 将边界内外的布尔值颠倒作为遮罩标志数组
-            mask = np.invert(flatten_mask.reshape((len(lat),len(lon))))
+                # 将边界内外的布尔值颠倒作为遮罩标志数组
+                mask = np.invert(flatten_mask.reshape((len(lat),len(lon))))
 
-            # 根据实际数据的层次对遮罩数组进行叠层处理
-            mask = np.stack([mask] * fct_array.shape[0])
+                # 根据实际数据的层次对遮罩数组进行叠层处理
+                if len(fct_array.shape) == 3:
+                    mask = np.stack([mask] * fct_array.shape[0])
 
-            # 对预报和真值数组进行遮罩
-            fct_array = np.ma.masked_where(mask,fct_array)
-            trv_array = np.ma.masked_where(mask,trv_array)
+                # 对预报和真值数组进行遮罩
+                fct_array = np.ma.masked_where(mask,fct_array)
+                trv_array = np.ma.masked_where(mask,trv_array)
+                # ipdb.set_trace()
 
+            else:
+                print('Parameter area is incorrect')
+                exit()
+        if 'level' in kwargs:
+            level = kwargs['level']
+            if variable in ['t','q','r']:
+                # tlev : [850., 700., 500.]
+                tlev = list(fctobj.variables['tlev'][:])
+                try:
+                    lev_index = tlev.index(level)
+                except ValueError:
+                    raise LevelError('%s is not in tlevel range, '
+                                     'please choose level in [850, 700, 500]'%level)
+            elif variable in ['u','v','at']:
+                # ulev : [500., 400., 300., 250., 200., 150.]
+                ulev = list(fctobj.variables['ulev'][:])
+                try:
+                    lev_index = ulev.index(level)
+                except ValueError:
+                    raise LevelError('%s is not in ulevel range, '
+                                 'please choose level in '
+                                 '[500, 400, 300, 250, 200, 150]'%level)
+            elif variable in ['u10','v10','t2','skt','tcc',
+                              'lcc','vis','tp','td2','sf',
+                              'lnsp','rh','spd','dir','ptype']:
+                warnings.warn('The variable you chosen has no level dimension, '
+                              'deprecated level parameter.')
+            else:
+                raise VariableError('%s is an Unknown variable' % variable)
         else:
-            print('Parameter area is incorrect')
-            exit()
+            if variable in ['t','q','r','u','v','at']:
+                warnings.warn('The level parameter is missing, '
+                              'adopted all levels')
+            elif variable in ['u10','v10','t2','skt','tcc',
+                              'lcc','vis','tp','td2','sf',
+                              'lnsp','rh','spd','dir','ptype']:
+                pass
+            else:
+                raise VariableError('%s is an Unknown variable' % variable)
 
-        if variable in ['t','q','r']:
-            # tlev : [850., 700., 500.]
-            tlev = list(fctobj.variables['tlev'][:])
-            try:
-                lev_index = tlev.index(level)
-            except ValueError:
-                raise LevelError('%s is not in tlevel range, '
-                                 'please choose level in [850, 700, 500]'%level)
-        elif variable in ['u','v','at']:
-            # ulev : [500., 400., 300., 250., 200., 150.]
-            ulev = list(fctobj.variables['ulev'][:])
-            try:
-                lev_index = ulev.index(level)
-            except ValueError:
-                raise LevelError('%s is not in ulevel range, '
-                             'please choose level in '
-                             '[500, 400, 300, 250, 200, 150]'%level)
 
         self._arrays = {'initial_time':init_time,
                         'forecast_time':forecast_time,
-                        'variable':variable,
-                        'level':level,
-                        'area':area,
-                        'fct_array':fct_array[lev_index],
-                        'trv_array':trv_array[lev_index]}
+                        'variable':variable}
+        if 'area' in kwargs:
+            self._arrays['area'] = area
+            # ipdb.set_trace()
+        if variable in ['u','v','at','t','q','r'] and 'level' in kwargs:
+            self._arrays['fct_array'] = fct_array[lev_index]
+            self._arrays['trv_array'] = trv_array[lev_index]
+            self._arrays['level'] = level
+        elif variable in ['u','v','at','t','q','r']:
+            self._arrays['fct_array'] = fct_array
+            self._arrays['trv_array'] = trv_array
+            self._arrays['level'] = 'all levels'
+        else:
+            self._arrays['fct_array'] = fct_array
+            self._arrays['trv_array'] = trv_array
+
+        # ipdb.set_trace()
+
 
     @property
     def errors(self):
@@ -466,20 +511,41 @@ class VerifyHandler():
             print('Please load arrays firstly.')
         error = AnalysError(self._arrays['fct_array'],
                             self._arrays['trv_array'])
-        return {'initial_time':self._arrays['initial_time'],
-                'forecast_time':self._arrays['forecast_time'],
-                'variable':self._arrays['variable'],
-                'level':self._arrays['level'],
-                'area':self._arrays['area'],
-                'mean_error':error.mean_error,
-                'abs_mean_error':error.abs_mean_error,
-                'rms_error':error.rms_error,
-                'std_error':error.std_error}
+
+        result = {'initial_time':self._arrays['initial_time'],
+                 'forecast_time':self._arrays['forecast_time'],
+                 'variable':self._arrays['variable'],
+                 'mean_error':error.mean_error,
+                 'abs_mean_error':error.abs_mean_error,
+                 'rms_error':error.rms_error,
+                 'std_error':error.std_error}
+
+        # ipdb.set_trace()
+
+        try:
+            result['level'] = self._arrays['level']
+        except:
+            pass
+        try:
+            result['area'] = self._arrays['area']
+        except KeyError:
+            pass
+
+        return result
 
 
 
 if __name__ == '__main__':
     vfh = VerifyHandler('EC')
-    vfh.load_arrays('2018122420','2018122508','t',700,'Heilongjiang')
+    vfh.load_arrays('2018122420','2018122508','rh',
+                    area = 'Heilongjiang',level = 700)
 
+    print(vfh._arrays)
     print(vfh.errors)
+    # print(vfh._arrays['fct_array'].max())
+    # print(vfh._arrays['fct_array'].min())
+    # print(vfh._arrays['trv_array'].max())
+    # print(vfh._arrays['trv_array'].min())
+    #
+    # ties = Ties('EC')
+    # print(ties.fetch_tie('2018122420','2018122508'))

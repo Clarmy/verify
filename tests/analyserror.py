@@ -30,9 +30,44 @@ def main():
 
     # 对实际数据的测试
     print('-----------实际数据测试-----------')
+    print('\n')
+    print("vfh.load_arrays('2018122420','2018122508','rh')")
     vfh = VerifyHandler('EC')
-    vfh.load_arrays('2018122420','2018122508','u',300,'Heilongjiang')
+    vfh.load_arrays('2018122420','2018122508','rh')
     pprint(vfh.errors)
+    print('\n')
+
+    print("vfh.load_arrays('2018122420','2018122508','rh',area='Jiangsu')")
+    vfh.load_arrays('2018122420','2018122508','rh',area='Jiangsu')
+    pprint(vfh.errors)
+    print('\n')
+
+    print("vfh.load_arrays('2018122420','2018122508','rh',area='Beijing')")
+    vfh.load_arrays('2018122420','2018122508','rh',area='Beijing')
+    pprint(vfh.errors)
+    print('\n')
+
+    print("vfh.load_arrays('2018122420','2018122508','q',area='Beijing')")
+    vfh.load_arrays('2018122420','2018122508','q',area='Beijing')
+    pprint(vfh.errors)
+    print('\n')
+
+    print("vfh.load_arrays('2018122420','2018122508','q',area='Beijing',level=500)")
+    vfh.load_arrays('2018122420','2018122508','q',area='Beijing',level=500)
+    pprint(vfh.errors)
+    print('\n')
+
+    print("vfh.load_arrays('2018122420','2018122508','q',area='Beijing',level=1000)")
+    vfh.load_arrays('2018122420','2018122508','q',area='Beijing',level=1000)
+    pprint(vfh.errors)
+    print('\n')
+
+    print("vfh.load_arrays('2018122420','2018122508','rh',area='Beijing',level=300)")
+    vfh.load_arrays('2018122420','2018122508','rh',area='Beijing',level=300)
+    pprint(vfh.errors)
+    print('\n')
+
+
 
 if __name__ == '__main__':
     main()
