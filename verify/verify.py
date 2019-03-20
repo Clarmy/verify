@@ -1,46 +1,11 @@
 # coding : utf-8
 from pprint import pprint as print
+from exceptions import *
 import os
 import numpy as np
 import netCDF4 as nc
 import json as js
 import warnings
-
-
-
-class UnknownDatasetError(Exception):
-    def __init__(self,message):
-        self.message = message
-
-
-
-class FetchError(Exception):
-    def __init__(self,message):
-        self.message = message
-
-
-
-class LevelError(Exception):
-    def __init__(self,message):
-        self.message = message
-
-
-
-class VariableError(Exception):
-    def __init__(self,message):
-        self.message = message
-
-
-
-class ParameterError(Exception):
-    def __init__(self,message):
-        self.message = message
-
-
-
-class AreaError(Exception):
-    def __init__(self,message):
-        self.message = message
 
 
 
@@ -182,7 +147,7 @@ class AnalysError():
         检验标准数组（真值）
 
     """
-    # ipdb.set_trace()
+
     def __init__(self,array1,array2):
         self._array1 = np.ma.array(array1)
         self._array2 = np.ma.array(array2)
@@ -432,7 +397,7 @@ class VerifyHandler():
                     with open('../config/regions/%s.geojson' % area) as f:
                         boundary = js.load(f)['geometry']['coordinates'][0][0]
                 except FileNotFoundError:
-                    raise AreaError('%s is unknown area' % area)
+                    raise AreaError('%s is an unknown area' % area)
 
                 # 边界路径对象
                 path = Path(boundary)
@@ -450,7 +415,7 @@ class VerifyHandler():
                 # 对预报和真值数组进行遮罩
                 fct_array = np.ma.masked_where(mask,fct_array)
                 trv_array = np.ma.masked_where(mask,trv_array)
-                # ipdb.set_trace()
+
 
             else:
                 print('Parameter area is incorrect')
@@ -490,7 +455,7 @@ class VerifyHandler():
                               'lnsp','rh','spd','dir','ptype']:
                 pass
             else:
-                raise VariableError('%s is an Unknown variable' % variable)
+                raise VariableError('%s is an unknown variable' % variable)
 
 
         self._arrays = {'initial_time':init_time,
@@ -498,7 +463,7 @@ class VerifyHandler():
                         'variable':variable}
         if 'area' in kwargs:
             self._arrays['area'] = area
-            # ipdb.set_trace()
+
         if variable in ['u','v','at','t','q','r'] and 'level' in kwargs:
             self._arrays['fct_array'] = fct_array[lev_index]
             self._arrays['trv_array'] = trv_array[lev_index]
@@ -511,7 +476,7 @@ class VerifyHandler():
             self._arrays['fct_array'] = fct_array
             self._arrays['trv_array'] = trv_array
 
-        # ipdb.set_trace()
+
 
 
     @property
@@ -531,7 +496,7 @@ class VerifyHandler():
                  'rms_error':error.rms_error,
                  'std_error':error.std_error}
 
-        # ipdb.set_trace()
+
 
         try:
             result['level'] = self._arrays['level']
@@ -553,10 +518,3 @@ if __name__ == '__main__':
 
     print(vfh._arrays)
     print(vfh.errors)
-    # print(vfh._arrays['fct_array'].max())
-    # print(vfh._arrays['fct_array'].min())
-    # print(vfh._arrays['trv_array'].max())
-    # print(vfh._arrays['trv_array'].min())
-    #
-    # ties = Ties('EC')
-    # print(ties.fetch_tie('2018122420','2018122508'))
