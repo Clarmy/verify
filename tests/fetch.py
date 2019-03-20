@@ -2,8 +2,10 @@
 '''
 测试路径结功能
 '''
+import os
 import sys
-sys.path.append('../verify')
+sys.path.insert(0,
+        os.path.abspath(os.path.join(os.path.dirname(__file__), '../verify')))
 from pprint import pprint
 from verify import Ties
 

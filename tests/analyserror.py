@@ -2,8 +2,10 @@
 '''
 测试误差计算功能
 '''
+import os
 import sys
-sys.path.append('../verify')
+sys.path.insert(0,
+        os.path.abspath(os.path.join(os.path.dirname(__file__), '../verify')))
 import numpy as np
 from pprint import pprint
 from verify import AnalysError

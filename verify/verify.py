@@ -81,6 +81,7 @@ class Ties():
 
         示例
         ----
+        >>> from verify import Ties
         >>> myties = Ties('EC')
         >>> myties.fetch_tie('2019030520','2019030720')
         {'forecast_time': '2019030720',
@@ -114,6 +115,7 @@ class Ties():
 
         示例
         ----
+        >>> from verify import Ties
         >>> myties = Ties('EC')
         >>> myties.fetch_ties('2019030520')
         {'initial_time': '2019030520',
@@ -195,6 +197,50 @@ class AreaError():
 
 
 
+class DichotVar():
+    """二分变量检验"""
+    def __init__(self):
+        pass
+
+    @property
+    def areas(self,obs,fct):
+        """计算二分变量的面积及相交面积
+
+        参数
+        ----
+        obs : `list` | `ndarray`
+            观测区域坐标列表
+
+        fct : `list` | `ndarray`
+            预报区域坐标列表，示例同上
+
+        返回
+        ----
+        `dict` : 各区域的面积值
+
+        示例
+        ----
+        >>> p1 = [[0,0],[1,0],[1,1],[0,1]]
+        >>> p2 = [[0,0],[2,0],[2,0.5],[0,0.5]]
+        >>> dv = DichotVar()
+        >>> dv.areas(p1,p2)
+        {'observation_area': 1.0, 'forecast_area': 1.0, 'intersection_area': 0.5}
+
+        """
+        from shapely.geometry import box, Polygon
+        pobs = Polygon(obs)
+        pfct = Polygon(fct)
+
+        aobs = pobs.area
+        afct = pfct.area
+        aist = pobs.intersection(pfct).area
+
+        return {'observation_area':aobs,
+                'forecast_area':afct,
+                'intersection_area':aist}
+
+
+
 class VerifyHandler():
     """检验处理器"""
     def __init__(self,dataset):
@@ -221,6 +267,7 @@ class VerifyHandler():
 
         示例
         ----
+        >>> from verify import VerifyHandler
         >>> vfh = VerifyHandler('EC')
         >>> vfh.load_arrays('2018122420','2018122620','t',700,'Beijing')
         """
@@ -347,4 +394,4 @@ if __name__ == '__main__':
     vfh = VerifyHandler('EC')
     vfh.load_arrays('2018122420','2018122508','t',700,'Heilongjiang')
 
-    print(vfh._arrays)
+    print(vfh.errors)
