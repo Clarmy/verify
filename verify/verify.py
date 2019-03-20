@@ -198,21 +198,59 @@ class AreaError():
 
 
 class DichotVar():
-    """二分变量检验"""
-    def __init__(self):
-        pass
+    """二分变量检验
+
+    参数
+    ----
+    obs : `list` | `ndarray`
+        观测区域坐标列表
+
+    fct : `list` | `ndarray`
+        预报区域坐标列表
+
+    region : `list` | `ndarray`
+        整个业务区域的边界坐标列表，obs和fct的坐标须在region的坐标范围内
+
+
+    示例
+    ----
+    >>> p1 = [[0,0],[1,0],[1,1],[0,1]]
+    >>> p2 = [[0,0],[2,0],[2,0.5],[0,0.5]]
+    >>> region = [[0,0],[3,0],[3,3],[0,3]]
+
+    >>> dv = DichotVar(p1,p2)
+
+    # 获取基本面积参数
+    >>> dv.areas
+    {'observation': 1.0,
+     'forecast': 1.0,
+     'hits': 0.5,
+     'false_alarms': 0.5,
+     'misses': 0.5,
+     'total': 9.0}
+
+     # 计算TS评分
+     >>> dv.ts
+     0.3333333333333333
+
+     # 计算ETS评分
+     >>> dv.ets
+     0.42
+
+    # 计算Bias评分
+     >>> dv.bias
+     1.0
+
+    """
+    def __init__(self,obs,fct,region):
+        self.obs = obs
+        self.fct = fct
+        self.region = region
+
 
     @property
-    def areas(self,obs,fct):
+    def areas(self):
         """计算二分变量的面积及相交面积
-
-        参数
-        ----
-        obs : `list` | `ndarray`
-            观测区域坐标列表
-
-        fct : `list` | `ndarray`
-            预报区域坐标列表，示例同上
 
         返回
         ----
@@ -225,19 +263,69 @@ class DichotVar():
         >>> dv = DichotVar()
         >>> dv.areas(p1,p2)
         {'observation_area': 1.0, 'forecast_area': 1.0, 'intersection_area': 0.5}
-
         """
         from shapely.geometry import box, Polygon
-        pobs = Polygon(obs)
-        pfct = Polygon(fct)
+        pobs = Polygon(self.obs)
+        pfct = Polygon(self.fct)
+        pall = Polygon(self.region)
 
         aobs = pobs.area
         afct = pfct.area
-        aist = pobs.intersection(pfct).area
+        hits = pobs.intersection(pfct).area
+        false_alarms = afct - hits
+        misses = aobs - hits
+        total = pall.area
 
-        return {'observation_area':aobs,
-                'forecast_area':afct,
-                'intersection_area':aist}
+        return {'observation':aobs,
+                'forecast':afct,
+                'hits':hits,
+                'false_alarms':false_alarms,
+                'misses':misses,
+                'total':total}
+
+
+    @property
+    def ts(self):
+        """计算TS评分"""
+        areas = self.areas
+        aobs = areas['observation']
+        afct = areas['forecast']
+        hits = areas['hits']
+        false_alarms = areas['false_alarms']
+        misses = areas['misses']
+
+        ts = hits/(hits+misses+false_alarms)
+
+        return ts
+
+
+    @property
+    def ets(self):
+        """计算ETS评分"""
+        areas = self.areas
+        hits = areas['hits']
+        false_alarms = areas['false_alarms']
+        misses = areas['misses']
+        total = areas['total']
+
+        hits_random = (hits + false_alarms)*(hits + misses) / total
+
+        ets = hits - hits_random/(hits + misses + false_alarms - hits_random)
+
+        return ets
+
+
+    @property
+    def bias(self):
+        """计算Bias评分"""
+        areas = self.areas
+        hits = areas['hits']
+        false_alarms = areas['false_alarms']
+        misses = areas['misses']
+
+        bias = (hits + false_alarms)/(hits + misses)
+
+        return bias
 
 
 
