@@ -1,5 +1,15 @@
 # verify
 
+## 安装模块
+克隆或者下载本项目  
+
+`git https://github.com/Clarmy/verify.git`
+
+然后进入下载目录下的`verify/`目录里，执行   
+
+`pip install dist/verify-0.0.1.dev1-py3-none-any.whl`
+
+
 ## 配置EC数值预报路径信息
 编辑 `config/config.json`文件，设置ECMWF数值预报存放的文件根目录，其格式为：
 ```json
