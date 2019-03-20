@@ -2,14 +2,9 @@
 '''
 测试误差计算功能
 '''
-import os
-import sys
-sys.path.insert(0,
-        os.path.abspath(os.path.join(os.path.dirname(__file__), '../verify')))
 import numpy as np
 from pprint import pprint
-from verify import AnalysError
-from verify import VerifyHandler
+from context import *
 
 def main():
     # 对伪造数组的简单测试
@@ -57,17 +52,20 @@ def main():
     pprint(vfh.errors)
     print('\n')
 
-    print("vfh.load_arrays('2018122420','2018122508','q',area='Beijing',level=1000)")
-    vfh.load_arrays('2018122420','2018122508','q',area='Beijing',level=1000)
-    pprint(vfh.errors)
-    print('\n')
+    # print("vfh.load_arrays('2018122420','2018122508','q',area='Beijing',level=1000)")
+    # vfh.load_arrays('2018122420','2018122508','q',area='Beijing',level=1000)
+    # pprint(vfh.errors)
+    # print('\n')
 
     print("vfh.load_arrays('2018122420','2018122508','rh',area='Beijing',level=300)")
     vfh.load_arrays('2018122420','2018122508','rh',area='Beijing',level=300)
     pprint(vfh.errors)
     print('\n')
 
-
+    print("vfh.load_arrays('2018122420','2018122508','rh',area='Japan',level=300)")
+    vfh.load_arrays('2018122420','2018122508','rh',area='Japan',level=300)
+    pprint(vfh.errors)
+    print('\n')
 
 if __name__ == '__main__':
     main()

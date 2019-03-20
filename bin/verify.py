@@ -1,5 +1,5 @@
 # coding : utf-8
-from pprint import pprint as print
+# from pprint import pprint as print
 from exceptions import *
 import os
 import numpy as np
@@ -475,8 +475,6 @@ class VerifyHandler():
         else:
             self._arrays['fct_array'] = fct_array
             self._arrays['trv_array'] = trv_array
-
-
 
 
     @property
