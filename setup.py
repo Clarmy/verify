@@ -17,5 +17,5 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     keywords='verify NWP',
-    packages=['verify'],
+    packages=['bin'],
 )
