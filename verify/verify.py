@@ -5,7 +5,6 @@ import numpy as np
 import netCDF4 as nc
 import json as js
 import warnings
-# import ipdb
 
 
 
@@ -34,6 +33,12 @@ class VariableError(Exception):
 
 
 class ParameterError(Exception):
+    def __init__(self,message):
+        self.message = message
+
+
+
+class AreaError(Exception):
     def __init__(self,message):
         self.message = message
 
@@ -346,7 +351,7 @@ class VerifyHandler():
     def load_arrays(self, init_time, forecast_time, variable, **kwargs):
         """加载数据
 
-        输入参数
+        必要参数
         -------
         init_time : `str`
             起报时间，例如2019年1月1日08时：'2019010108'
@@ -354,6 +359,9 @@ class VerifyHandler():
             预报时间，该起报时间所对应的某一预报时间，例如2019年1月3日20时：'2019010320'
         variable : `str`
             变量名，例如高空温度't'。
+
+        可选参数
+        -------
         level : `int`
             高度层变量，如700hPa则该参数输入700
         area : `str` | `tuple` | `list`
@@ -366,7 +374,7 @@ class VerifyHandler():
         ----
         >>> from verify import VerifyHandler
         >>> vfh = VerifyHandler('EC')
-        >>> vfh.load_arrays('2018122420','2018122620','t',700,'Beijing')
+        >>> vfh.load_arrays('2018122420','2018122620','t',level=700,area='Beijing')
         """
         tie = Ties(self.dataset)
         tie_dict = tie.fetch_tie(init_time,forecast_time)
@@ -420,8 +428,11 @@ class VerifyHandler():
                 coords = list(zip(lons.flatten(),lats.flatten()))
 
                 # 加载区域边界
-                with open('../config/regions/%s.geojson' % area) as f:
-                    boundary = js.load(f)['geometry']['coordinates'][0][0]
+                try:
+                    with open('../config/regions/%s.geojson' % area) as f:
+                        boundary = js.load(f)['geometry']['coordinates'][0][0]
+                except FileNotFoundError:
+                    raise AreaError('%s is unknown area' % area)
 
                 # 边界路径对象
                 path = Path(boundary)
