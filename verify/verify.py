@@ -14,7 +14,7 @@ class Ties():
         if dataset in ['ECMWF','EC']:
             self.dataset = 'ECMWF'
 
-            with open('./config/config.json') as f:
+            with open('../verify/config/config.json') as f:
                 config = js.load(f)
             self.rootpath = config[self.dataset]['path']
         else:
@@ -393,7 +393,7 @@ class VerifyHandler():
 
                 # 加载区域边界
                 try:
-                    with open('../config/regions/%s.geojson' % area) as f:
+                    with open('../verify/config/regions/%s.geojson' % area) as f:
                         boundary = js.load(f)['geometry']['coordinates'][0][0]
                 except FileNotFoundError:
                     raise AreaError('%s is an unknown area' % area)
@@ -492,8 +492,6 @@ class VerifyHandler():
                  'abs_mean_error':error.abs_mean_error,
                  'rms_error':error.rms_error,
                  'std_error':error.std_error}
-
-
 
         try:
             result['level'] = self._arrays['level']
