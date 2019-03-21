@@ -1,5 +1,4 @@
 # coding : utf-8
-# from pprint import pprint as print
 from exceptions import *
 import os
 import numpy as np
@@ -15,7 +14,7 @@ class Ties():
         if dataset in ['ECMWF','EC']:
             self.dataset = 'ECMWF'
 
-            with open('../config/config.json') as f:
+            with open('./config/config.json') as f:
                 config = js.load(f)
             self.rootpath = config[self.dataset]['path']
         else:
