@@ -5,7 +5,6 @@ import numpy as np
 import netCDF4 as nc
 import json as js
 import warnings
-import zipfile
 
 prefix = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 

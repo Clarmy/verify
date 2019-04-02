@@ -20,7 +20,7 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     keywords='verify NWP',
-    packages=['.'],
+    py_modules=['verify'],
     data_files=[('regions',['regions/Anhui.geojson',
                             'regions/Beijing.geojson',
                             'regions/Chongqing.geojson',
