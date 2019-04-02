@@ -5,8 +5,9 @@ import numpy as np
 import netCDF4 as nc
 import json as js
 import warnings
+import zipfile
 
-
+prefix = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
 class Ties():
     """路径打结器"""
@@ -14,7 +15,7 @@ class Ties():
         if dataset in ['ECMWF','EC']:
             self.dataset = 'ECMWF'
 
-            with open('../verify/config/config.json') as f:
+            with open(prefix+'/config/config.json') as f:
                 config = js.load(f)
             self.rootpath = config[self.dataset]['path']
         else:
@@ -186,7 +187,7 @@ class DichotVar():
     fct : `list` | `ndarray`
         预报区域坐标列表
 
-    region : `list` | `ndarray`
+    on : `list` | `ndarray`
         整个业务区域的边界坐标列表，obs和fct的坐标须在region的坐标范围内
 
 
@@ -241,6 +242,7 @@ class DichotVar():
         >>> dv = DichotVar()
         >>> dv.areas(p1,p2)
         {'observation_area': 1.0, 'forecast_area': 1.0, 'intersection_area': 0.5}
+
         """
         from shapely.geometry import box, Polygon
         pobs = Polygon(self.obs)
@@ -312,7 +314,7 @@ class VerifyHandler():
     def __init__(self, dataset):
         self.dataset = dataset
 
-    def load_arrays(self, init_time, forecast_time, variable, **kwargs):
+    def load_arrays(self, init_time, forecast_time, variable, *args, **kwargs):
         """加载数据
 
         必要参数
@@ -339,6 +341,7 @@ class VerifyHandler():
         >>> from verify import VerifyHandler
         >>> vfh = VerifyHandler('EC')
         >>> vfh.load_arrays('2018122420','2018122620','t',level=700,area='Beijing')
+
         """
         tie = Ties(self.dataset)
         tie_dict = tie.fetch_tie(init_time,forecast_time)
@@ -393,7 +396,7 @@ class VerifyHandler():
 
                 # 加载区域边界
                 try:
-                    with open('../verify/config/regions/%s.geojson' % area) as f:
+                    with open(prefix+'/regions/%s.geojson' % area) as f:
                         boundary = js.load(f)['geometry']['coordinates'][0][0]
                 except FileNotFoundError:
                     raise AreaError('%s is an unknown area' % area)

@@ -3,8 +3,18 @@
 ## 安装模块
 克隆或者下载本项目  
 
-`git https://github.com/Clarmy/verify.git`
+`$ git https://github.com/Clarmy/verify.git`
 
+进入模块保存目录后，执行
+
+`$ python setup.py install`
+
+测试是否安装成功，在终端启动Python交互命令行`$ python`，然后导入`verify`模块，若无报错，则安装成功
+
+```
+>>> import verify
+>>>
+```
 
 ## 配置EC数值预报路径信息
 编辑 `config/config.json`文件，设置ECMWF数值预报存放的文件根目录，其格式为：
