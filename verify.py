@@ -82,7 +82,6 @@ class Ties():
                 return {'initial_time':init_time,
                         'forecast_time':forecast_time,
                         'path_tie':cp}
-                break
         else:
             raise FetchError('Can\'t find forecast time.')
 
